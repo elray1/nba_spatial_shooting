@@ -36,9 +36,17 @@ const App = {
   async init_all_shots_data() {
     var shots = await d3.csv('data/shots.csv');
 
-    // adjust loc_y for a more convenient orientation.
-    // after this step, basketball hoop is centered at (0, 400)
-    this.state.all_shots = shots.map((d) => { d.loc_y = 400. - d.loc_y; return d })
+    // make 2 adjustments to data:
+    // 1) adjust loc_y for a more convenient orientation.
+    //    after this step, basketball hoop is centered at (0, 400)
+    // 2) add a field with numeric shot value
+    // note: for efficiency, should move these computations to csv production
+    function update_datum(d) {
+      d.loc_y = 400. - d.loc_y;
+      d.shot_value = Number(d.shot_type[0]);
+      return d;
+    }
+    this.state.all_shots = shots.map(update_datum);
   },
   
   /**
@@ -75,6 +83,8 @@ const App = {
       .on('change', this.handle_change_show_points);
     d3.select('#checkShowHexbin')
       .on('change', this.handle_change_show_hexbin);
+    d3.select('#selectMetric')
+      .on('change', this.handle_change_select_metric);
     d3.select('#rangeBinWidth')
       .on('change', this.handle_change_bin_width);
   },
@@ -132,14 +142,11 @@ const App = {
   },
   
   draw_chart() {
-    console.log('draw chart');
     const svg = d3.select('#plot-container svg');
-    console.log(document.getElementById('checkShowHexbin').checked);
     if(document.getElementById('checkShowHexbin').checked) {
       this.draw_hexbin_layer();
     }
     
-    console.log(document.getElementById('checkShowPoints').checked);
     if(document.getElementById('checkShowPoints').checked) {
       this.draw_scatter_layer();
     }
@@ -152,6 +159,9 @@ const App = {
     const hexbin_radius = (hexbin_width * 10) / (2 * Math.sin(Math.PI / 3));
     const chart_dims = this.state.chart_dims;
     
+    // hexbin object
+    // note: we could save this in the app state and update it only when th
+    // radius selection changes
     const hexbin = d3.hexbin()
       .x(d => d.loc_x)
       .y(d => d.loc_y)
@@ -159,10 +169,28 @@ const App = {
       .extent([[chart_dims.x_min, chart_dims.y_min],
                [chart_dims.x_min + chart_dims.width, chart_dims.y_min + chart_dims.height]]);
     
+    // binned data values
+    // note: we could save this in the app state and update it only when the
+    // hexbin object changes or the selected shots changes
     const bins = hexbin(this.state.selected_shots);
     
+    // function to compute metric value on bin data
+    const metric = d3.select('#selectMetric').property('value');
+    if(metric == 'Shot count') {
+      var metric_fn = function(bin) {
+        return bin.length;
+      };
+    } else if (metric == 'Shooting percentage') {
+      var metric_fn = function(bin) {
+        return d3.sum(bin, (d) => d.shot_made_flag) / bin.length;
+      };
+    } else if (metric == 'Points per shot') {
+      var metric_fn = function(bin) {
+        return d3.sum(bin, (d) => d.shot_made_flag * d.shot_value) / bin.length;
+      };
+    }
     const color_scale = d3.scaleSequential(d3.interpolateBuPu)
-      .domain([0, d3.max(bins, d => d.length) / 2]);
+      .domain([0, d3.max(bins, metric_fn) * 0.75]);
       
     d3.select('#g_hexbin_layer')
       .attr("fill", "#ddd")
@@ -172,13 +200,11 @@ const App = {
       .join("path")
       .attr("transform", d => `translate(${d.x},${d.y})`)
       .attr("d", hexbin.hexagon())
-      .attr("fill", bin => color_scale(bin.length));
+      .attr("fill", d => color_scale(metric_fn(d)));
   },
   
   /**
    * Add scatter plot of individual shots to the chart
-   *
-   * @param {Selection} svg - d3 selection of svg element containing the chart
    */
   draw_scatter_layer() {
     d3.select('#g_scatter_layer')
@@ -297,11 +323,30 @@ const App = {
    */
   handle_change_show_hexbin() {
     if(document.getElementById('checkShowHexbin').checked) {
+      d3.select('#labelSelectMetric').classed('text-black-50', false);
+      document.getElementById('selectMetric').disabled = false;
+      d3.select('#labelRangeBinWidth').classed('text-black-50', false);
+      document.getElementById('rangeBinWidth').disabled = false;
+
       App.draw_hexbin_layer();
     } else {
+      d3.select('#labelSelectMetric').classed('text-black-50', true);
+      document.getElementById('selectMetric').disabled = true;
+      d3.select('#labelRangeBinWidth').classed('text-black-50', true);
+      document.getElementById('rangeBinWidth').disabled = true;
+
       d3.select('#g_hexbin_layer')
         .selectAll('path')
         .remove();
+    }
+  },
+  
+  /**
+   * Handle change to summary metric selection
+   */
+  handle_change_select_metric() {
+    if(document.getElementById('checkShowHexbin').checked) {
+      App.draw_hexbin_layer();
     }
   },
   
@@ -311,7 +356,9 @@ const App = {
   handle_change_bin_width() {
     d3.select('#labelRangeBinWidth')
       .text(`Summary bin width: ${Number(document.getElementById('rangeBinWidth').value)} feet`);
-    App.draw_hexbin_layer();
+    if(document.getElementById('checkShowHexbin').checked) {
+      App.draw_hexbin_layer();
+    }
   }
 }
 
