@@ -1,6 +1,4 @@
-// import * as d3 from 'https://cdn.jsdelivr.net/npm/d3@7/+esm';
-
-// this implements a straightforward SPA with state - based on
+// this implements a SPA with state - based on
 // https://dev.to/vijaypushkin/dead-simple-state-management-in-vanilla-javascript-24p0
 const App = {
   state: {
@@ -11,9 +9,15 @@ const App = {
       y_min: 0,
       width: 500,
       height: 452.5,
-      margin: 10
+      margin: 12
     },
-    chart_scales: {}
+    chart_scales: {
+      shot_made_color_scale: d3.scaleOrdinal([0, 1], ['#BC9A5C', '#008853']),
+      shot_made_shape_scale_small: d3.scaleOrdinal([0, 1], [d3.symbol(d3.symbolCircle, 18)(),
+                                                            d3.symbol(d3.symbolCross, 18)()]),
+      shot_made_shape_scale_large: d3.scaleOrdinal([0, 1], [d3.symbol(d3.symbolCircle, 36)(),
+                                                            d3.symbol(d3.symbolCross, 36)()]),
+      }
   },
   
   /**
@@ -21,7 +25,7 @@ const App = {
    */
   async init() {
     await this.init_all_shots_data();
-    this.init_select_player();
+    this.init_ui();
     this.update_selected_shots();
     this.init_chart();
   },
@@ -33,8 +37,46 @@ const App = {
     var shots = await d3.csv('data/shots.csv');
 
     // adjust loc_y for a more convenient orientation.
-    // after this step, basketball hoop is at (0, 400)
+    // after this step, basketball hoop is centered at (0, 400)
     this.state.all_shots = shots.map((d) => { d.loc_y = 400. - d.loc_y; return d })
+  },
+  
+  /**
+   * Initialize the UI
+   */
+  init_ui() {
+    this.init_select_player();
+    
+    // add points to label for show points checkbox
+    d3.select('#labelCheckShowPointsSVG')
+      .attr('stroke-width', 0.1)
+      .selectAll('path')
+      .data([0.0, 1.0])
+      .join('path')
+      .attr('transform', d => `translate(${10 + 20*d}, 10)`)
+      .attr('fill', d => this.state.chart_scales.shot_made_color_scale(d))
+      .attr('d', d => this.state.chart_scales.shot_made_shape_scale_large(d));
+    
+    // add hexbin to label for show summaries checkbox
+    const hexbin = d3.hexbin()
+      .radius(10);
+    d3.select('#labelCheckShowSummariesSVG')
+      .attr("fill", "#ddd")
+      .attr("stroke", "black")
+      .selectAll("path")
+      .data([0])
+      .join("path")
+      .attr("transform", 'translate(20, 10)')
+      .attr("d", hexbin.hexagon())
+      .attr('fill', 'rgb(140, 131, 189)')
+
+    // add event handlers
+    d3.select('#checkShowPoints')
+      .on('change', this.handle_change_show_points);
+    d3.select('#checkShowHexbin')
+      .on('change', this.handle_change_show_hexbin);
+    d3.select('#rangeBinWidth')
+      .on('change', this.handle_change_bin_width);
   },
   
   /**
@@ -67,16 +109,6 @@ const App = {
   },
   
   init_chart() {
-    // set up scales
-    this.state.chart_scales
-      .shot_made_color_scale = d3.scaleOrdinal(this.state.all_shots.map(d => d.shot_made_flag),
-                                               ['#BC9A5C', '#008853']);
-    this.state.chart_scales
-      .shot_made_shape_scale = d3.scaleOrdinal(this.state.all_shots.map(d => d.shot_made_flag),
-                                               d3.symbols.map(s => d3.symbol()
-                                                                     .type(s)
-                                                                     .size(18)()));
-
     // Create the SVG container.
     const chart_dims = this.state.chart_dims;
     const svg = d3.select('#plot-container').append('svg')
@@ -100,15 +132,23 @@ const App = {
   },
   
   draw_chart() {
+    console.log('draw chart');
     const svg = d3.select('#plot-container svg');
-    this.draw_hexbin_layer();
-    this.draw_scatter_layer();
+    console.log(document.getElementById('checkShowHexbin').checked);
+    if(document.getElementById('checkShowHexbin').checked) {
+      this.draw_hexbin_layer();
+    }
+    
+    console.log(document.getElementById('checkShowPoints').checked);
+    if(document.getElementById('checkShowPoints').checked) {
+      this.draw_scatter_layer();
+    }
     this.draw_court(svg);
   },
   
   draw_hexbin_layer() {
     // Bin the data.
-    const hexbin_width = 2; // feet
+    const hexbin_width = Number(document.getElementById('rangeBinWidth').value); // feet
     const hexbin_radius = (hexbin_width * 10) / (2 * Math.sin(Math.PI / 3));
     const chart_dims = this.state.chart_dims;
     
@@ -148,7 +188,7 @@ const App = {
       .join('path')
       .attr('transform', d => `translate(${d.loc_x}, ${d.loc_y})`)
       .attr('fill', d => this.state.chart_scales.shot_made_color_scale(d.shot_made_flag))
-      .attr('d', d => this.state.chart_scales.shot_made_shape_scale(d.shot_made_flag));
+      .attr('d', d => this.state.chart_scales.shot_made_shape_scale_small(d.shot_made_flag));
   },
   
   /**
@@ -159,7 +199,7 @@ const App = {
    */
   draw_court(svg) {
     const {x_min, y_min, height} = this.state.chart_dims;
-    const [stroke_color, stroke_width] = ['#555555', 1.25]
+    const [stroke_color, stroke_width] = ['#555555', 2]
     
     // court edges
     const court_edges = [
@@ -176,14 +216,16 @@ const App = {
       .attr('fill', 'none');
   
     // three point lines
+    // subtracting 0.25 is a fudge factor to hide a gap in the angled join
+    // between the sides and the arc
     const three_pt_sides = [
       [
         [-220, y_min + height],
-        [-220, 400 - Math.sqrt(237.5**2 - 220**2)]
+        [-220, 400 - Math.sqrt(237.5**2 - 220**2) - 0.25]
       ],
       [
         [220, y_min + height],
-        [220, 400 - Math.sqrt(237.5**2 - 220**2)]
+        [220, 400 - Math.sqrt(237.5**2 - 220**2) - 0.25]
       ]
     ]
   
@@ -230,13 +272,46 @@ const App = {
   },
   
   /**
-   * Handle change to selected player:
-   *  - update this.state.selected_shots
-   *  - redraw plot
+   * Handle change to selected player
    */
   handle_change_selected_player() {
     App.update_selected_shots();
     App.draw_chart();
+  },
+  
+  /**
+   * Handle change to show points checkbox
+   */
+  handle_change_show_points() {
+    if(document.getElementById('checkShowPoints').checked) {
+      App.draw_scatter_layer();
+    } else {
+      d3.select('#g_scatter_layer')
+        .selectAll('path')
+        .remove();
+    }
+  },
+  
+  /**
+   * Handle change to show hex summaries checkbox
+   */
+  handle_change_show_hexbin() {
+    if(document.getElementById('checkShowHexbin').checked) {
+      App.draw_hexbin_layer();
+    } else {
+      d3.select('#g_hexbin_layer')
+        .selectAll('path')
+        .remove();
+    }
+  },
+  
+  /**
+   * Handle change to hex bin width
+   */
+  handle_change_bin_width() {
+    d3.select('#labelRangeBinWidth')
+      .text(`Summary bin width: ${Number(document.getElementById('rangeBinWidth').value)} feet`);
+    App.draw_hexbin_layer();
   }
 }
 
