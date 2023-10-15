@@ -21,49 +21,47 @@
 </head>
 <body>
   <div class="container-fluid">
-    <div id="data">      
-      <div class="row">
-        <div class="col-sm-3 pt-3 bg-light border-end border-bottom">
-          <h4 class="display-4">Celtics Shooting <small class="text-body-secondary">2022-23 Season</small></h4>
-          <div class=form-row mb-3">
-            <h5>About</h5>
-            <p>This app lets you explore shots taken by Celtics players who played at least 30 games during the 2022-23 season.</p>
-            <p>Data comes from the NBA Stats API, and was acquired using the <code>nba_api</code> package for Python. The visualization was built using the <code>d3</code> JavaScript library, and the UI uses <code>bootstrap</code>. All code is available on <a href="https://github.com/elray1/nba_spatial_shooting">GitHub</a>.</p>
-          </div>
-          <div class=form-row mb-3">
-            <h5>Chart Options</h5>
-          </div>
-          <div class="form-row mb-3">
-            <label class="form-label" for="selectPlayer">Player:</label>
-            <select class="form-control" id="selectPlayer"></select>
-          </div>
-          <div class="form-row mb-3 form-check">
-            <input class="form-check-input" type="checkbox" value="" id="checkShowPoints" checked />
-            <label class="form-check-label" for="checkShowPoints" id="labelCheckShowPoints">
-              Show points <svg id="labelCheckShowPointsSVG" width="40px" height="20px"></svg>
-            </label>
-          </div>
-          <div class="form-row mb-3 form-check">
-            <input class="form-check-input" type="checkbox" value="" id="checkShowHexbin" checked />
-            <label class="form-check-label" for="checkShowHexbin" id="labelCheckShowHexbin">
-              Show summaries <svg id="labelCheckShowSummariesSVG" width="40px" height="20px"></svg>
-            </label>
-          </div>
-          <div class="form-row mb-3">
-            <label class="form-label" for="selectMetric" id="labelSelectMetric">Summary metric:</label>
-            <select class="form-control" id="selectMetric">
-              <option value="Shot count">Shot count</option>
-              <option value="Shooting percentage">Shooting percentage</option>
-              <option value="Points per shot">Points per shot</option>
-            </select>
-          </div>
-          <div class="form-row mb-3">
-            <label for="rangeBinWidth" class="form-label" id="labelRangeBinWidth">Summary bin width: 2 feet</label>
-            <input type="range" class="form-range" min="1" max="10" step="0.5" value="2" id="rangeBinWidth" />
-          </div>
+    <div class="row">
+      <div class="col-sm-3 pt-3 bg-light border-end border-bottom">
+        <h4 class="display-4">Celtics Shooting <small class="text-body-secondary">2022-23 Season</small></h4>
+        <div class=row mb-3">
+          <h5>About</h5>
+          <p>This app lets you explore shots taken by Celtics players who played at least 30 games during the 2022-23 season.</p>
+          <p>Data comes from the NBA Stats API, and was acquired using the <code>nba_api</code> package for Python. The visualization was built using the <code>d3</code> JavaScript library, and the UI uses <code>bootstrap</code>. All code is available on <a href="https://github.com/elray1/nba_spatial_shooting">GitHub</a>.</p>
         </div>
-        <div class="col-sm-9 vh-100" id="plot-container"></div>
+        <div class=row mb-3">
+          <h5>Chart Options</h5>
+        </div>
+        <div class="form-row mb-3">
+          <label class="form-label" for="selectPlayer">Player:</label>
+          <select class="form-control" id="selectPlayer"></select>
+        </div>
+        <div class="form-row mb-3 form-check">
+          <input class="form-check-input" type="checkbox" value="" id="checkShowPoints" checked />
+          <label class="form-check-label" for="checkShowPoints" id="labelCheckShowPoints">
+            Show points:
+          </label>
+        </div>
+        <div class="form-row mb-3 form-check">
+          <input class="form-check-input" type="checkbox" value="" id="checkShowHexbin" checked />
+          <label class="form-check-label" for="checkShowHexbin" id="labelCheckShowHexbin">
+            Show summaries: <svg id="labelCheckShowSummariesSVG" width="40px" height="20px"></svg>
+          </label>
+        </div>
+        <div class="form-row mb-3">
+          <label class="form-label" for="selectMetric" id="labelSelectMetric">Summary metric:</label>
+          <select class="form-control" id="selectMetric">
+            <option value="Shot count">Shot count</option>
+            <option value="Shooting percentage">Shooting percentage</option>
+            <option value="Points per shot">Points per shot</option>
+          </select>
+        </div>
+        <div class="form-row mb-3">
+          <label for="rangeBinWidth" class="form-label" id="labelRangeBinWidth">Summary bin width: 2 feet</label>
+          <input type="range" class="form-range" min="1" max="10" step="0.5" value="2" id="rangeBinWidth" />
+        </div>
       </div>
+      <div class="col-sm-9 vh-100" id="chartContainer"></div>
     </div>
   </div>
   <script type="module" src="app.js"></script>

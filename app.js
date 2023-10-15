@@ -55,28 +55,47 @@ const App = {
   init_ui() {
     this.init_select_player();
     
-    // add points to label for show points checkbox
-    d3.select('#labelCheckShowPointsSVG')
-      .attr('stroke-width', 0.1)
-      .selectAll('path')
-      .data([0.0, 1.0])
-      .join('path')
-      .attr('transform', d => `translate(${10 + 20*d}, 10)`)
-      .attr('fill', d => this.state.chart_scales.shot_made_color_scale(d))
-      .attr('d', d => this.state.chart_scales.shot_made_shape_scale_large(d));
+    // add point legend to label for show points checkbox
+    const label_show_points = d3.select('#labelCheckShowPoints');
+    for(let d=0; d<2; d++) {
+      let pt_legend_subdiv = label_show_points.append('div');
+      pt_legend_subdiv.append('svg')
+        .attr('viewBox', [0, 0, 20, 20])
+        .attr('style', 'width: 20px; height: 20px;')
+        .attr('stroke-width', 0.1)
+        .selectAll('path')
+        .data([d])
+        .join('path')
+        .attr('transform', 'translate(10, 10)')
+        .attr('fill', d => this.state.chart_scales.shot_made_color_scale(d))
+        .attr('d', d => this.state.chart_scales.shot_made_shape_scale_large(d));
+      pt_legend_subdiv.append('span')
+        .classed('ms-2', true)
+        .text(['Missed shot', 'Made shot'][d])
+    }
     
-    // add hexbin to label for show summaries checkbox
+    // add hexbin legend to label for show summaries checkbox
+    const label_show_hexbin = d3.select('#labelCheckShowHexbin');
     const hexbin = d3.hexbin()
       .radius(10);
-    d3.select('#labelCheckShowSummariesSVG')
-      .attr("fill", "#ddd")
-      .attr("stroke", "black")
-      .selectAll("path")
-      .data([0])
-      .join("path")
-      .attr("transform", 'translate(20, 10)')
-      .attr("d", hexbin.hexagon())
-      .attr('fill', 'rgb(140, 131, 189)')
+    for(let d=0; d<2; d++) {
+      let bin_legend_subdiv = label_show_hexbin.append('div');
+      bin_legend_subdiv.append('svg')
+        .attr('viewBox', [0, 0, 20, 20])
+        .attr('style', 'width: 20px; height: 20px;')
+        .attr("fill", "#ddd")
+        .attr("stroke", "black")
+        .attr('stroke-width', 0.75)
+        .selectAll('path')
+        .data([d])
+        .join('path')
+        .attr('transform', 'translate(10, 10)')
+        .attr("d", hexbin.hexagon())
+        .attr('fill', ['rgb(240, 247, 250)', 'rgb(77, 0, 75)'][d]);
+      bin_legend_subdiv.append('span')
+        .classed('ms-2', true)
+        .text(['Low', 'High'][d])
+    }
 
     // add event handlers
     d3.select('#checkShowPoints')
@@ -121,7 +140,7 @@ const App = {
   init_chart() {
     // Create the SVG container.
     const chart_dims = this.state.chart_dims;
-    const svg = d3.select('#plot-container').append('svg')
+    const svg = d3.select('#chartContainer').append('svg')
       .attr('viewBox', [chart_dims.x_min - chart_dims.margin,
                         chart_dims.y_min - chart_dims.margin,
                         chart_dims.width + 2*chart_dims.margin,
@@ -142,7 +161,7 @@ const App = {
   },
   
   draw_chart() {
-    const svg = d3.select('#plot-container svg');
+    const svg = d3.select('#chartContainer svg');
     if(document.getElementById('checkShowHexbin').checked) {
       this.draw_hexbin_layer();
     }
