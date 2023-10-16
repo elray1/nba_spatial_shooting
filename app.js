@@ -83,14 +83,14 @@ const App = {
       bin_legend_subdiv.append('svg')
         .attr('viewBox', [0, 0, 20, 20])
         .attr('style', 'width: 20px; height: 20px;')
-        .attr("fill", "#ddd")
-        .attr("stroke", "black")
+        .attr('fill', '#ddd')
+        .attr('stroke', 'black')
         .attr('stroke-width', 0.75)
         .selectAll('path')
         .data([d])
         .join('path')
         .attr('transform', 'translate(10, 10)')
-        .attr("d", hexbin.hexagon())
+        .attr('d', hexbin.hexagon())
         .attr('fill', ['rgb(240, 247, 250)', 'rgb(77, 0, 75)'][d]);
       bin_legend_subdiv.append('span')
         .classed('ms-2', true)
@@ -222,16 +222,16 @@ const App = {
     
     // add/update bins, with tooltips listing all metrics
     d3.select('#g_hexbin_layer')
-      .attr("fill", "#ddd")
-      .attr("stroke", "black")
-      .selectAll("path")
+      .attr('fill', '#ddd')
+      .attr('stroke', 'black')
+      .selectAll('path')
       .data(bins)
-      .join("path")
-      .attr("transform", d => `translate(${d.x},${d.y})`)
-      .attr("d", hexbin.hexagon())
-      .attr("fill", d => color_scale(sel_metric_fn(d)))
+      .join('path')
+      .attr('transform', d => `translate(${d.x},${d.y})`)
+      .attr('d', hexbin.hexagon())
+      .attr('fill', d => color_scale(sel_metric_fn(d)))
       .attr('data-bs-toggle', 'tooltip')
-      .attr('data-bs-placement', "bottom")
+      .attr('data-bs-placement', 'bottom')
       .attr('data-bs-html', 'true')
       .attr('data-bs-title', d => `Shot count: ${metric_fns.shot_count(d)} <br /> Shooting pct: ${d3.format('.1%')(metric_fns.shooting_pct(d))} <br /> Points per shot: ${d3.format('.2')(metric_fns.pts_per_shot(d))}`);
     
@@ -275,7 +275,7 @@ const App = {
     svg.append('path')
       .attr('d', d3.line()(court_edges))
       .attr('stroke', stroke_color)
-      .attr("stroke-width", stroke_width)
+      .attr('stroke-width', stroke_width)
       .attr('fill', 'none');
   
     // three point lines
@@ -296,7 +296,7 @@ const App = {
       svg.append('path')
         .attr('d', d3.line()(three_pt_sides[i]))
         .attr('stroke', stroke_color)
-        .attr("stroke-width", stroke_width)
+        .attr('stroke-width', stroke_width)
         .attr('fill', 'none');
     }
   
@@ -306,11 +306,11 @@ const App = {
       .startAngle(-Math.PI / 2 + Math.acos(22.0 / 23.75))
       .endAngle(Math.PI / 2 - Math.acos(22.0 / 23.75));
   
-    svg.append("path")
-      .attr("transform", "translate(0, 400)")
-      .attr("d", three_pt_arc_gen)
+    svg.append('path')
+      .attr('transform', 'translate(0, 400)')
+      .attr('d', three_pt_arc_gen)
       .attr('stroke', stroke_color)
-      .attr("stroke-width", stroke_width)
+      .attr('stroke-width', stroke_width)
       .attr('fill', 'none');
   
     // Basketball hoop and backboard
@@ -319,7 +319,7 @@ const App = {
       .attr('cy', 400)
       .attr('r', '7.5')
       .attr('stroke', stroke_color)
-      .attr("stroke-width", stroke_width)
+      .attr('stroke-width', stroke_width)
       .attr('fill', 'none');
   
     const backboard = [
@@ -330,7 +330,7 @@ const App = {
     svg.append('path')
       .attr('d', d3.line()(backboard))
       .attr('stroke', stroke_color)
-      .attr("stroke-width", stroke_width)
+      .attr('stroke-width', stroke_width)
       .attr('fill', 'none');
   },
   
