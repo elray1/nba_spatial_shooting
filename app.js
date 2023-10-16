@@ -193,24 +193,34 @@ const App = {
     // hexbin object changes or the selected shots changes
     const bins = hexbin(this.state.selected_shots);
     
-    // function to compute metric value on bin data
+    // functions to compute metric value on bin data
+    const metric_fns = {
+      shot_count(bin) {
+        return bin.length;
+      },
+      shooting_pct(bin) {
+        return d3.sum(bin, (d) => d.shot_made_flag) / bin.length;
+      },
+      pts_per_shot(bin) {
+        return d3.sum(bin, (d) => d.shot_made_flag * d.shot_value) / bin.length;
+      }
+    }
+    
+    // which metric function was selected to use for fill color
     const metric = d3.select('#selectMetric').property('value');
     if(metric == 'Shot count') {
-      var metric_fn = function(bin) {
-        return bin.length;
-      };
+      var sel_metric_fn = metric_fns.shot_count;
     } else if (metric == 'Shooting percentage') {
-      var metric_fn = function(bin) {
-        return d3.sum(bin, (d) => d.shot_made_flag) / bin.length;
-      };
+      var sel_metric_fn = metric_fns.shooting_pct;
     } else if (metric == 'Points per shot') {
-      var metric_fn = function(bin) {
-        return d3.sum(bin, (d) => d.shot_made_flag * d.shot_value) / bin.length;
-      };
+      var sel_metric_fn = metric_fns.pts_per_shot;
     }
+
+    // create color scale
     const color_scale = d3.scaleSequential(d3.interpolateBuPu)
-      .domain([0, d3.max(bins, metric_fn) * 0.75]);
-      
+      .domain([0, d3.max(bins, sel_metric_fn) * 0.75]);
+    
+    // add/update bins, with tooltips listing all metrics
     d3.select('#g_hexbin_layer')
       .attr("fill", "#ddd")
       .attr("stroke", "black")
@@ -219,7 +229,15 @@ const App = {
       .join("path")
       .attr("transform", d => `translate(${d.x},${d.y})`)
       .attr("d", hexbin.hexagon())
-      .attr("fill", d => color_scale(metric_fn(d)));
+      .attr("fill", d => color_scale(sel_metric_fn(d)))
+      .attr('data-bs-toggle', 'tooltip')
+      .attr('data-bs-placement', "bottom")
+      .attr('data-bs-html', 'true')
+      .attr('data-bs-title', d => `Shot count: ${metric_fns.shot_count(d)} <br /> Shooting pct: ${d3.format('.1%')(metric_fns.shooting_pct(d))} <br /> Points per shot: ${d3.format('.2')(metric_fns.pts_per_shot(d))}`);
+    
+    // Enable bootstrap tooltips
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+    const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
   },
   
   /**
